@@ -38,7 +38,7 @@ void secondHandler()
   float arg4;
   char arg5;
   float arg6;
-  char arg7[10];
+  String arg7;
   char arg8;
   if (parser.getArg(0,arg0)) Serial.println(arg0);
   if (parser.getArg(1,arg1)) Serial.println(arg1);

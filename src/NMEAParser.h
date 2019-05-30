@@ -367,6 +367,7 @@ public:
 
     switch (mState) {
 
+      /* Waiting for the starting $ character */
       case INIT:
         mError = NMEA::NO_ERROR;
         if (inChar == '$') {
@@ -498,6 +499,20 @@ public:
       {
         NMEAParserStringify stfy(this, endPos);
         strcpy(arg, &mBuffer[startPos]);
+      }
+      return true;
+    }
+    else return false;
+  }
+
+  bool getArg(uint8_t num, String &arg)
+  {
+    if (validArgNum(num)) {
+      uint8_t startPos = startArgPos(num);
+      uint8_t endPos = endArgPos(num);
+      {
+        NMEAParserStringify stfy(this, endPos);
+        arg = &mBuffer[startPos];
       }
       return true;
     }
