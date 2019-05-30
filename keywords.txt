@@ -1,0 +1,32 @@
+#######################################
+# Syntax Coloring Map For NMEAParser
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+NMEAParser	KEYWORD1
+NMEA	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+addHandler	KEYWORD2
+setErrorHandler	KEYWORD2
+setDefaultHandler	KEYWORD2
+argCount	KEYWORD2
+getArg	KEYWORD2
+getType	KEYWORD2
+error	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+NO_ERROR	LITERAL1
+UNEXPECTED_CHAR	LITERAL1
+BUFFER_FULL	LITERAL1
+CRC_ERROR	LITERAL1
+INTERNAL_ERROR	LITERAL1

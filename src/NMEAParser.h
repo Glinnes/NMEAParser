@@ -43,6 +43,19 @@
 #include <Arduino.h>
 #endif
 
+namespace NMEA {
+  /*
+   * Error codes
+   */
+  typedef enum {
+      NO_ERROR,
+      UNEXPECTED_CHAR,
+      BUFFER_FULL,
+      CRC_ERROR,
+      INTERNAL_ERROR
+  } ErrorCode;
+}
+
 /*
  * The library consists of a single template: NMEAParser.
  */
@@ -57,21 +70,10 @@ private:
 public:
   /*
    * maximum sentence size is 82 including the starting '$' and the <cr><lf>
-   * at the end. Since '$' and the <cr><lf> are not bufferized, 79 chars +1 are
-   * enough
+   * at the end. Since '$' and the <cr><lf> are not bufferized, 79 chars + 1
+   * is enough.
    */
   static const uint8_t kSentenceMaxSize = 80;
-
-  /*
-   * Error codes
-   */
-  typedef enum {
-      NO_ERROR,
-      UNEXPECTED_CHAR,
-      BUFFER_FULL,
-      CRC_ERROR,
-      INTERNAL_ERROR
-  } ErrorCode;
 
 private:
   /*
@@ -120,7 +122,7 @@ private:
   /*
    * mError
    */
-  ErrorCode mError;
+  NMEA::ErrorCode mError;
 
   /*
    * char that caused an mError
@@ -151,7 +153,7 @@ private:
    */
   void unexpectedChar(char inChar)
   {
-    mError = UNEXPECTED_CHAR;
+    mError = NMEA::UNEXPECTED_CHAR;
     mChar = inChar;
     callErrorHandler();
     reset();
@@ -162,7 +164,7 @@ private:
    */
   void bufferFull(char inChar)
   {
-    mError = BUFFER_FULL;
+    mError = NMEA::BUFFER_FULL;
     mChar = inChar;
     callErrorHandler();
     reset();
@@ -173,7 +175,7 @@ private:
    */
   void crcError()
   {
-    mError = CRC_ERROR;
+    mError = NMEA::CRC_ERROR;
     callErrorHandler();
     reset();
   }
@@ -183,7 +185,7 @@ private:
    */
   void internalError()
   {
-    mError = INTERNAL_ERROR;
+    mError = NMEA::INTERNAL_ERROR;
     callErrorHandler();
     reset();
   }
@@ -236,7 +238,9 @@ private:
       mHandlers[slot].mHandler();
     }
     else {
-      mDefaultHandler();
+      if (mDefaultHandler != NULL) {
+        mDefaultHandler();
+      }
     }
   }
 
@@ -264,6 +268,13 @@ private:
     return mBuffer[kSentenceMaxSize - 2 - inArgNum];
   }
 
+  /*
+   * NMEAParserStringify is used internally to temporarely replace a char
+   * in the buffer by a '\0' so that libc string functions may be used.
+   * Instantiating a NMEAParserStringify object in a pair of {} defines
+   * a section in which the 'stringification' is done : the constructor
+   * does that according to the arguments and se destructor restore the buffer.
+   */
   class NMEAParserStringify {
     uint8_t       mPos;
     char          mTmp;
@@ -283,15 +294,21 @@ private:
   };
 
 public:
+  /*
+   * Constructor initialize the parser.
+   */
   NMEAParser() :
     mErrorHandler(NULL),
     mDefaultHandler(NULL),
     mHandlerCount(0),
-    mError(NO_ERROR)
+    mError(NMEA::NO_ERROR)
   {
     reset();
   }
 
+  /*
+   * Add a sentence handler
+   */
   void addHandler(const char *inToken, NMEAHandler inHandler)
   {
     if (mHandlerCount < S) {
@@ -304,16 +321,43 @@ public:
     }
   }
 
+#ifdef __AVR__
+  /*
+   * Add a sentence handler. Version with a token stored in flash.
+   */
+   void addHandler(const __FlashStringHelper *ifsh, NMEAHandler inHandler)
+   {
+     char buf[6];
+     PGM_P p = reinterpret_cast<PGM_P>(ifsh);
+     for (uint8_t i = 0; i < 6; i++) {
+       char c = pgm_read_byte(p++);
+       buf[i] = c;
+       if (c == '\0) break;
+     }
+     addHandler(buf, inHandler);
+   }
+#endif
+
+  /*
+   * Set the error handler which is called when a sentence is malformed
+   */
   void setErrorHandler(NMEAErrorHandler inHandler)
   {
     mErrorHandler = inHandler;
   }
 
+  /*
+   * Set the default handler which is called when a sentence is well formed
+   * but has no handler associated to
+   */
   void setDefaultHandler(NMEAHandler inHandler)
   {
     mDefaultHandler = inHandler;
   }
 
+  /*
+   * Give a character to the parser
+   */
   void operator<<(char inChar)
   {
     static uint8_t computedCRC = 0;
@@ -323,7 +367,7 @@ public:
     switch (mState) {
 
       case INIT:
-        mError = NO_ERROR;
+        mError = NMEA::NO_ERROR;
         if (inChar == '$') {
           computedCRC = 0;
           mState = SENT;
@@ -423,11 +467,17 @@ public:
     }
   }
 
+  /*
+   * Returns the number of arguments discovered in a well formed sentence.
+   */
   uint8_t argCount()
   {
     return kSentenceMaxSize - mArgIndex - 1;
   }
 
+  /*
+   * Returns one of the arguments. Different versions according to data type.
+   */
   bool getArg(uint8_t num, char &arg)
   {
     if (validArgNum(num)) {
@@ -467,6 +517,22 @@ public:
     else return false;
   }
 
+  bool getArg(uint8_t num, float &arg)
+  {
+    if (validArgNum(num)) {
+      uint8_t startPos = startArgPos(num);
+      uint8_t endPos = endArgPos(num);
+      {
+        NMEAParserStringify stfy(this, endPos);
+        arg = atof(&mBuffer[startPos]);
+      }
+      return true;
+    }
+    else return false;
+  }
+  /*
+   * Returns the type of sentence.
+   */
   bool getType(char *arg)
   {
     if (mIndex > 0) {
@@ -480,7 +546,7 @@ public:
     else return false;
   }
 
-  ErrorCode error() {
+  NMEA::ErrorCode error() {
     return mError;
   }
 

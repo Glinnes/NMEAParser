@@ -26,7 +26,7 @@ void generateSentence(bool goodCRC)
   for (int i = 0; i < numberOfArgs; i++) {
     putchar(',');
     crc ^= ',';
-    int kind = random() % 3;
+    int kind = random() % 5;
     switch (kind) {
       case 0: /* integer */
         for (int j = 0; j < random() % 5 + 1; j++) {
@@ -48,6 +48,21 @@ void generateSentence(bool goodCRC)
           putchar(letter);
           crc ^= letter;
         }
+        break;
+      case 3: /* float */
+        for (int j = 0; j < random() % 5 + 1; j++) {
+          char digit = '0' + random() % 10;
+          putchar(digit);
+          crc ^= digit;
+        }
+        putchar('.');
+        crc ^= '.';
+        for (int j = 0; j < random() % 5 + 1; j++) {
+          char digit = '0' + random() % 10;
+          putchar(digit);
+          crc ^= digit;
+        }
+      case 4: /* nothing */
         break;
     }
   }

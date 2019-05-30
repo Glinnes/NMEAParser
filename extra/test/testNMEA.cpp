@@ -1,4 +1,4 @@
-#include "NMEAParser.h"
+#include "../../src/NMEAParser.h"
 #include <string.h>
 
 NMEAParser<4> commandNMEA;
@@ -6,21 +6,27 @@ NMEAParser<4> commandNMEA;
 void error()
 {
   printf("=================================================\n");
-  printf("*** ERROR %d\n",commandNMEA.error());
+  int err = commandNMEA.error();
+  printf("*** ERROR %d ",err);
+  switch (err) {
+    case NMEA::UNEXPECTED_CHAR:
+      printf("(UNEXPECTED CHAR)\n");
+      break;
+    case NMEA::BUFFER_FULL:
+      printf("(BUFFER FULL)\n");
+      break;
+    case NMEA::CRC_ERROR:
+      printf("(CRC ERROR)\n");
+      break;
+    case NMEA::INTERNAL_ERROR:
+      printf("(INTERNAL ERROR)\n");
+      break;
+    default:
+      printf("(?)\n");
+      break;
+  }
   commandNMEA.printBuffer();
   printf("=================================================\n");
-}
-
-void arv1cCommand()
-{
-  printf("got ARV1C\n");
-  int arg0, arg1;
-  char arg2;
-  char buf[10];
-  if (commandNMEA.getArg(0,arg0)) printf("%d\n", arg0);
-  if (commandNMEA.getArg(1,arg1)) printf("%d\n", arg1);
-  if (commandNMEA.getArg(2,arg2)) printf("%c\n", arg2);
-  if (commandNMEA.getArg(2,buf)) printf("%s\n", buf);
 }
 
 void defaultHandler()
@@ -40,15 +46,15 @@ void defaultHandler()
 int main()
 {
   printf("Debut du test\n");
-//  char sentence[] = "$ARV1C,2,3,AB*19\r\n";
 
   commandNMEA.setErrorHandler(error);
   commandNMEA.setDefaultHandler(defaultHandler);
-  commandNMEA.addHandler("ARV1C", arv1cCommand);
-  commandNMEA.addHandler("ARV1C", arv1cCommand);
 
+  int count = 0;
   int v;
   while ((v = getchar()) != EOF) {
     commandNMEA << v;
+    if (v == '\n') count++;
   }
+  printf("*** Processed %d NMEA sentences\n", count);
 }
