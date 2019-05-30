@@ -130,6 +130,31 @@ private:
   char mChar;
 
   /*
+   * NMEAParserStringify is used internally to temporarely replace a char
+   * in the buffer by a '\0' so that libc string functions may be used.
+   * Instantiating a NMEAParserStringify object in a pair of {} defines
+   * a section in which the 'stringification' is done : the constructor
+   * does that according to the arguments and se destructor restore the buffer.
+   */
+  class NMEAParserStringify {
+    uint8_t       mPos;
+    char          mTmp;
+    NMEAParser<S> *mParent;
+  public:
+    NMEAParserStringify(NMEAParser<S> *inParent, uint8_t inPos) :
+      mPos(inPos),
+      mParent(inParent)
+    {
+      mTmp = mParent->mBuffer[mPos];
+      mParent->mBuffer[mPos] = '\0';
+    }
+    ~NMEAParserStringify()
+    {
+      mParent->mBuffer[mPos] = mTmp;
+    }
+  };
+
+  /*
    * Call the error handler if defined
    */
   void callErrorHandler(void)
@@ -229,11 +254,12 @@ private:
   void processSentence()
   {
     /* Look for the token */
-    uint8_t endPos = endArgPos(0);
-    char tmp = mBuffer[endPos];
-    mBuffer[endPos] = '\0';
-    int8_t slot = getHandler(mBuffer);
-    mBuffer[endPos] = tmp;
+    uint8_t endPos = startArgPos(0);
+    int8_t slot;
+    {
+      NMEAParserStringify stfy(this, endPos);
+      slot = getHandler(mBuffer);
+    }
     if (slot != -1) {
       mHandlers[slot].mHandler();
     }
@@ -267,31 +293,6 @@ private:
   {
     return mBuffer[kSentenceMaxSize - 2 - inArgNum];
   }
-
-  /*
-   * NMEAParserStringify is used internally to temporarely replace a char
-   * in the buffer by a '\0' so that libc string functions may be used.
-   * Instantiating a NMEAParserStringify object in a pair of {} defines
-   * a section in which the 'stringification' is done : the constructor
-   * does that according to the arguments and se destructor restore the buffer.
-   */
-  class NMEAParserStringify {
-    uint8_t       mPos;
-    char          mTmp;
-    NMEAParser<S> *mParent;
-  public:
-    NMEAParserStringify(NMEAParser<S> *inParent, uint8_t inPos) :
-      mPos(inPos),
-      mParent(inParent)
-    {
-      mTmp = mParent->mBuffer[mPos];
-      mParent->mBuffer[mPos] = '\0';
-    }
-    ~NMEAParserStringify()
-    {
-      mParent->mBuffer[mPos] = mTmp;
-    }
-  };
 
 public:
   /*
@@ -332,7 +333,7 @@ public:
      for (uint8_t i = 0; i < 6; i++) {
        char c = pgm_read_byte(p++);
        buf[i] = c;
-       if (c == '\0) break;
+       if (c == '\0') break;
      }
      addHandler(buf, inHandler);
    }
