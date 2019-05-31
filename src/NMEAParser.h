@@ -51,6 +51,7 @@ namespace NMEA {
       NO_ERROR,
       UNEXPECTED_CHAR,
       BUFFER_FULL,
+      TYPE_TOO_LONG,
       CRC_ERROR,
       INTERNAL_ERROR
   } ErrorCode;
@@ -70,10 +71,11 @@ private:
 public:
   /*
    * maximum sentence size is 82 including the starting '$' and the <cr><lf>
-   * at the end. Since '$' and the <cr><lf> are not bufferized, 79 chars + 1
+   * at the end. Since '$', the '*', the 2 characters CRC and the <cr><lf>
+   * are not bufferized, 82 - 6 + 1 = 77 chars  are enough.
    * is enough.
    */
-  static const uint8_t kSentenceMaxSize = 80;
+  static const uint8_t kSentenceMaxSize = 77;
 
 private:
   /*
@@ -125,9 +127,9 @@ private:
   NMEA::ErrorCode mError;
 
   /*
-   * char that caused an mError
+   * True if CRC is handled, false otherwise. Defaults to true
    */
-  char mChar;
+  bool mHandleCRC;
 
   /*
    * NMEAParserStringify is used internally to temporarely replace a char
@@ -171,15 +173,15 @@ private:
     mState = INIT;
     mIndex = 0;
     mArgIndex = kSentenceMaxSize;
+    mError = NMEA::NO_ERROR;
   }
 
   /*
    * Called when the parser encounter a char that should not be there
    */
-  void unexpectedChar(char inChar)
+  void unexpectedChar()
   {
     mError = NMEA::UNEXPECTED_CHAR;
-    mChar = inChar;
     callErrorHandler();
     reset();
   }
@@ -187,14 +189,22 @@ private:
   /*
    * Called when the buffer is full because of a malformed sentence
    */
-  void bufferFull(char inChar)
+  void bufferFull()
   {
     mError = NMEA::BUFFER_FULL;
-    mChar = inChar;
     callErrorHandler();
     reset();
   }
 
+  /*
+   * Called when the type of the sentence is longer than 5 characters
+   */
+  void typeTooLong()
+  {
+    mError = NMEA::TYPE_TOO_LONG;
+    callErrorHandler();
+    reset();
+  }
   /*
    * Called when the CRC is wrong
    */
@@ -302,7 +312,8 @@ public:
     mErrorHandler(NULL),
     mDefaultHandler(NULL),
     mHandlerCount(0),
-    mError(NMEA::NO_ERROR)
+    mError(NMEA::NO_ERROR),
+    mHandleCRC(true)
   {
     reset();
   }
@@ -373,17 +384,24 @@ public:
         if (inChar == '$') {
           computedCRC = 0;
           mState = SENT;
+          tmp = 0;
         }
-        else unexpectedChar(inChar);
+        else unexpectedChar();
         break;
 
       case SENT:
         if (isalnum(inChar)) {
           if (spaceAvail()) {
-            mBuffer[mIndex++] = inChar;
-            computedCRC ^= inChar;
+            if (tmp < 5) {
+              tmp++;
+              mBuffer[mIndex++] = inChar;
+              computedCRC ^= inChar;
+            }
+            else {
+              typeTooLong();
+            }
           }
-          else bufferFull(inChar);
+          else bufferFull();
         }
         else {
           switch(inChar) {
@@ -398,7 +416,7 @@ public:
               mState = CRCH;
               break;
             default :
-              unexpectedChar(inChar);
+              unexpectedChar();
               break;
           }
         }
@@ -422,7 +440,7 @@ public:
               break;
           }
         }
-        else bufferFull(inChar);
+        else bufferFull();
         break;
 
       case CRCH:
@@ -431,7 +449,7 @@ public:
           gotCRC |= (uint8_t)tmp << 4;
           mState = CRCL;
         }
-        else unexpectedChar(inChar);
+        else unexpectedChar();
         break;
 
       case CRCL:
@@ -440,19 +458,19 @@ public:
           gotCRC |= (uint8_t)tmp;
           mState = CRLFCR;
         }
-        else unexpectedChar(inChar);
+        else unexpectedChar();
         break;
 
       case CRLFCR:
         if (inChar == '\r') {
           mState = CRLFLF;
         }
-        else unexpectedChar(inChar);
+        else unexpectedChar();
         break;
 
       case CRLFLF:
         if (inChar == '\n') {
-          if (gotCRC != computedCRC) {
+          if (mHandleCRC && (gotCRC != computedCRC)) {
             crcError();
           }
           else {
@@ -460,7 +478,7 @@ public:
           }
           reset();
         }
-        else unexpectedChar(inChar);
+        else unexpectedChar();
         break;
 
       default:
@@ -562,10 +580,27 @@ public:
     else return false;
   }
 
+  bool getType(String &arg)
+  {
+    if (mIndex > 0) {
+      uint8_t endPos = endArgPos(0);
+      {
+        NMEAParserStringify stfy(this, endPos);
+        arg = mBuffer;
+      }
+      return true;
+    }
+    else return false;
+  }
+
   NMEA::ErrorCode error() {
     return mError;
   }
 
+  void setHandleCRC(bool inHandleCRC)
+  {
+    mHandleCRC = inHandleCRC;
+  }
 #ifdef __amd64__
   void printBuffer()
   {

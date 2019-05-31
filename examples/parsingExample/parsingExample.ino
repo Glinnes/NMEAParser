@@ -51,7 +51,8 @@ void secondHandler()
   if (parser.getArg(8,arg8)) Serial.println(arg8);
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   parser.setErrorHandler(errorHandler);
@@ -71,5 +72,6 @@ void setup() {
   }
 }
 
-void loop() {
+void loop()
+{
 }
