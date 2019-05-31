@@ -131,7 +131,7 @@ Return the error. The returned code can be:
 
 Characters are fed to the parser in ```loop```, assuming we get the characters from ```Serial```, the following way:
 
-```
+```C++
 while (Serial.available()) {
   parser << Serial.read();
 }
@@ -155,7 +155,7 @@ $ARLED,0*43
 
 to turn the LED off. We define a single handler to retrieve the argument and control the LED accordingly:
 
-```
+```C++
 void ledHandler()
 {
   Serial.print("Got ARLED with ");
@@ -170,7 +170,7 @@ void ledHandler()
 
 We define 2 other handlers for anything else than ```ARLED``` and for errors
 
-```
+```C++
 void errorHandler()
 {
   Serial.print("*** Error : ");
@@ -188,7 +188,7 @@ void unknownCommand()
 
 In ```setup```, the handlers are installed:
 
-```
+```C++
 void setup() {
   Serial.begin(115200);
   parser.setErrorHandler(errorHandler);
@@ -200,7 +200,7 @@ void setup() {
 
 At last in loop, we feed the parser with the chars coming from ```Serial```.
 
-```
+```C++
 void loop() {
   if (Serial.available()) {
     parser << Serial.read();
