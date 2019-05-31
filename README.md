@@ -66,7 +66,7 @@ Specifies whether the CRC is checked or not. By default, the CRC is checked. If 
 ---
 In the handlers, you will get the arguments of the sentence, the sentence type or the error if any by using the following functions:
 
-###```bool getArg(<argnum>, <argval>)```
+### ```bool getArg(<argnum>, <argval>)```
 
 is used to get the arguments of the sentence. ```<argnum>``` is the number of the argument, starting at 0 for the argument that follows the identifier. ```<argval``` is a variable where the argument value will be stored if successful. ```getArg``` returns a boolean which is true if successfull, false if not.
 
