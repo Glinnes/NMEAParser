@@ -4,11 +4,11 @@ An Arduino library to parse NMEA sentences.
 
 NMEA is a communication standard in the marine equipment industry: GPS, anemometers,... The NMEAParser library allows you to analyze NMEA sentences and associate handlers to each of those that need to be recognized. The library provides the means to associate a handler to each identifier and also provides functions to retrieve the arguments of the sentence in different data formats: character, integer, float, character string.
 
-##Memory footprint
+## Memory footprint
 
 On an Arduino Uno, an instance of a NMEAParser requires 95 bytes with only one handler. 8 bytes per additional handler are required. 
 
-##Using NMEAParser
+## Using NMEAParser
 
 As usual, the library should be included at the beginning of the sketch.
 
@@ -26,7 +26,7 @@ The ```4``` is the maximum number of handlers desired, ```parser``` is the name 
 
 In ```setup``` you configure your parser as you wish using the following functions.
 
-###```void addHandler(<type>, <handler>)```
+### ```void addHandler(<type>, <handler>)```
 
 where ```<type>``` is a character string and the type of sentence to recongnize, and ```<handler>``` the function to call when a sentence is recognize. ```<type>``` can be a string stored un RAM or a string stored in flash : ```F("ASTRI")```. If ```<type>``` has more than 5 characters, it is trucated. 
 
@@ -51,15 +51,15 @@ parser.addHanlder("SDDBS", handleDepthBelowSurface);
 
 ```handleDepthBelowKeel``` and ```handleDepthBelowSurface``` are functions that will be called when sentences are recognized.
 
-###```void setDefaultHandler(<handler>)```
+### ```void setDefaultHandler(<handler>)```
 
 When a sentence is succefully parsed but none of the handler correspond to it, ```<handler>``` is called. It is a function corresponding to a ```void f(void)``` prototype.  By default, no function is called.
 
-###```void setErrorHandler(<handler>)```
+### ```void setErrorHandler(<handler>)```
 
 When a sentence is malformed : too long, wrong characters, etc, ```<handler>``` is called. It is a function corresponding to a ```void f(void)``` prototype.  By default, no function is called.
 
-###```void setHandleCRC(<doCRC>)```
+### ```void setHandleCRC(<doCRC>)```
 
 Specifies whether the CRC is checked or not. By default, the CRC is checked. If you do not want CRC verification, pass ```false``` to ```setHandleCRC```.
 
@@ -108,15 +108,15 @@ void handleDepthBelowSurface(void)
 }
 ```
 
-###```bool getType(<type>)```
+### ```bool getType(<type>)```
 
 Put the type of the sentence in ```<type>```. It can be a ```char *``` or a ```String```. Return ```true``` if a type has been parsed, ```false``` otherwise.
 
-###```uint8_t argCount()```
+### ```uint8_t argCount()```
 
 Return the number of arguments.
 
-###```NMEA::ErrorCode error()```
+### ```NMEA::ErrorCode error()```
 
 Return the error. The returned code can be:
 
@@ -127,7 +127,7 @@ Return the error. The returned code can be:
 * ```NMEA::CRC_ERROR```: the CRC is wrong;
 * ```NMEA::INTERNAL_ERROR```: the internal state of the parser is wrong, should not happen by the way.
 
-###Feeding characters to the parser
+### Feeding characters to the parser
 
 Characters are fed to the parser in ```loop```, assuming we get the characters from ```Serial```, the following way:
 
