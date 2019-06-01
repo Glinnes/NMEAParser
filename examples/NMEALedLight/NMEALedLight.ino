@@ -17,6 +17,7 @@
  */
 #include <NMEAParser.h>
 
+/* A parser with only one handler */
 NMEAParser<1> parser;
 
 void errorHandler()
