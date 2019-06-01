@@ -244,7 +244,7 @@ private:
   /*
    * convert a one hex digit char into an int. Used for the CRC
    */
-  int8_t hexToNum(const char inChar)
+  static int8_t hexToNum(const char inChar)
   {
     if (isdigit(inChar)) return inChar - '0';
     else if (isupper(inChar) && inChar <= 'F') return inChar - 'A' + 10;
@@ -252,14 +252,24 @@ private:
     else return -1;
   }
 
+  static bool strnwcmp(const char *s1, const char *s2, uint8_t len)
+  {
+    while (len-- > 0) {
+      if (*s1 != *s2 && *s1 != '-' && *s2 != '-') return false;
+      s1++;
+      s2++;
+    }
+    return true;
+  }
+
   /*
-   * return the slot number fo a handler. -1 if not found
+   * return the slot number for a handler. -1 if not found
    */
   int8_t getHandler(const char *inToken)
   {
     /* Look for the token */
     for (uint8_t i = 0; i < mHandlerCount; i++) {
-      if (strncmp(mHandlers[i].mToken, inToken, 5) == 0) {
+      if (strnwcmp(mHandlers[i].mToken, inToken, 5)) {
         return i;
       }
     }
@@ -603,6 +613,19 @@ public:
     else return false;
   }
 #endif
+
+  bool getType(uint8_t inIndex, char &outTypeChar)
+  {
+    if (mIndex > 0) {
+      uint8_t endPos = startArgPos(0);
+      if (inIndex < endPos) {
+        outTypeChar = mBuffer[inIndex];
+        return true;
+      }
+      else return false;
+    }
+    else return false;
+  }
 
   NMEA::ErrorCode error() {
     return mError;

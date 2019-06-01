@@ -4,9 +4,14 @@ An Arduino library to parse NMEA sentences.
 
 NMEA is a communication standard in the marine equipment industry: GPS, anemometers,... The NMEAParser library allows you to analyze NMEA sentences and associate handlers to each of those that need to be recognized. The library provides the means to associate a handler to each identifier and also provides functions to retrieve the arguments of the sentence in different data formats: character, integer, float, character string.
 
+## Changelog
+
+* ```1.1``` : Added joker in type. Remove binaries from ```extra```
+* ```1.0``` : Initial release
+
 ## Memory footprint
 
-On an Arduino Uno, an instance of a NMEAParser requires 97 bytes with only one handler. 8 bytes per additional handler are required. 
+On an Arduino Uno, an instance of a NMEAParser requires 97 bytes with only one handler. 8 bytes per additional handler are required.
 
 ## Using NMEAParser
 
@@ -28,7 +33,7 @@ In ```setup``` you configure your parser as you wish using the following functio
 
 ### ```void addHandler(<type>, <handler>)```
 
-where ```<type>``` is a character string and the type of sentence to recongnize, and ```<handler>``` the function to call when a sentence is recognize. ```<type>``` can be a string stored un RAM or a string stored in flash : ```F("ASTRI")```. If ```<type>``` has more than 5 characters, it is trucated. 
+where ```<type>``` is a character string and the type of sentence to recongnize, and ```<handler>``` the function to call when a sentence is recognize. ```<type>``` can be a string stored un RAM or a string stored in flash : ```F("ASTRI")```. If ```<type>``` has more than 5 characters, it is trucated.
 
 For example, suppose you want to recognize the following sounder sentences which give the water depth below keel (DBK) and below surface (DBS):
 
@@ -50,6 +55,14 @@ parser.addHanlder("SDDBS", handleDepthBelowSurface);
 ```
 
 ```handleDepthBelowKeel``` and ```handleDepthBelowSurface``` are functions that will be called when sentences are recognized.
+
+With version 1.1, ```<type>``` may include hyphens. An hyphens matches any character. For instance if you want the handler to match all sentences coming from the sounder, you would write:
+
+```C++
+parser.addHandler("SD---", handleSounder);
+```
+
+```handleSounder``` function would be called for any sentence with the type beginning with SD.
 
 ### ```void setDefaultHandler(<handler>)```
 
@@ -108,9 +121,9 @@ void handleDepthBelowSurface(void)
 }
 ```
 
-### ```bool getType(<type>)```
+### ```bool getType(<type>) / bool getType(<num>, <charType>)```
 
-Put the type of the sentence in ```<type>```. It can be a ```char *``` or a ```String```. Return ```true``` if a type has been parsed, ```false``` otherwise.
+3 versions of ```getType``` exist. The first one puts the type of the sentence in ```<type>```. It can be a ```char *``` or a ```String```. Return ```true``` if a type has been parsed, ```false``` otherwise. The second one puts a character of the type at position ```<num>```
 
 ### ```uint8_t argCount()```
 
@@ -122,7 +135,7 @@ Return the error. The returned code can be:
 
 * ```NMEA::NO_ERROR```: no error;
 * ```NMEA::UNEXPECTED_CHAR```: a char which is not expected in the sentence has been encountered;
-* ```NMEA::BUFFER_FULL```: the sentence is too long to fit in the buffer; 
+* ```NMEA::BUFFER_FULL```: the sentence is too long to fit in the buffer;
 * ```NMEA::TYPE_TOO_LONG```: the sentence type has more than 5 characters;
 * ```NMEA::CRC_ERROR```: the CRC is wrong;
 * ```NMEA::INTERNAL_ERROR```: the internal state of the parser is wrong, should not happen by the way.
@@ -174,7 +187,7 @@ We define 2 other handlers for anything else than ```ARLED``` and for errors
 void errorHandler()
 {
   Serial.print("*** Error : ");
-  Serial.println(parser.error()); 
+  Serial.println(parser.error());
 }
 
 void unknownCommand()
@@ -219,7 +232,7 @@ The ```gen``` subdirectory contains ```nmeagen```, a NMEA sentence generator pro
 
 ## Test program
 
-The ```test``` subdirectory contains a test program that compile on Linux or Mac OS X. It takes sentences from the standard input, parse them and print out the type, the arguments and if an error occured. 
+The ```test``` subdirectory contains a test program that compile on Linux or Mac OS X. It takes sentences from the standard input, parse them and print out the type, the arguments and if an error occured.
 
 ---
 # Additional links
