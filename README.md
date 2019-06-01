@@ -139,7 +139,7 @@ while (Serial.available()) {
 
 This can also be done in ```serialEvent```. ```while``` could be replaced by ```if```.
 
-##A complete example
+## A complete example
 
 Let's say you want to turn the Arduino's LED on and off. We define a NMEA sentence taking a single argument: 1 to turn on the LED and 0 to turn it off. The sentence can therefore be:
 
