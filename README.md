@@ -208,4 +208,17 @@ void loop() {
 }
 ```
 
+---
+# Extra software
+
+Additional software can be found in the ```extra``` directory.
+
+## NMEA sentences generator
+
+The ```gen``` subdirectory contains ```nmeagen```, a NMEA sentence generator program. This program generates well formed sentences with good or bad CRC. It can be used to test the parser. To build ```nmeagen```, run the ```build.sh``` script. ```nmeagen``` takes 1 or 2 arguments. The first argument is the number of sentences to generate. The second optional one is the number of sentences with bad CRC.
+
+## Test program
+
+The ```test``` subdirectory contains a test program that compile on Linux or Mac OS X. It takes sentences from the standard input, parse them and print out the type, the arguments and if an error occured. 
+
 That's all folks !

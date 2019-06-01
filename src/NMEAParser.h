@@ -3,6 +3,8 @@
  *
  * Simple and compact NMEA parser designed for Arduino
  *
+ * Author : Glinnes Hulden
+ *
  * This work is distributed under license CC0.
  * Check https://creativecommons.org/publicdomain/zero/1.0/deed.en
  *
