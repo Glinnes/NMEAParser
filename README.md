@@ -6,7 +6,7 @@ NMEA is a communication standard in the marine equipment industry: GPS, anemomet
 
 ## Memory footprint
 
-On an Arduino Uno, an instance of a NMEAParser requires 95 bytes with only one handler. 8 bytes per additional handler are required. 
+On an Arduino Uno, an instance of a NMEAParser requires 97 bytes with only one handler. 8 bytes per additional handler are required. 
 
 ## Using NMEAParser
 
