@@ -221,4 +221,11 @@ The ```gen``` subdirectory contains ```nmeagen```, a NMEA sentence generator pro
 
 The ```test``` subdirectory contains a test program that compile on Linux or Mac OS X. It takes sentences from the standard input, parse them and print out the type, the arguments and if an error occured. 
 
+---
+# Additional links
+
+* [NMEA CRC calculator](https://nmeachecksum.eqth.net)
+* [NMEA 0183 on Wikipedia](https://fr.wikipedia.org/wiki/NMEA_0183)
+* [NMEA revealed](https://gpsd.gitlab.io/gpsd/NMEA.html)
+
 That's all folks !
