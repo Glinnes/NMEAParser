@@ -2,6 +2,7 @@
 #include <string.h>
 
 NMEAParser<4> commandNMEA;
+int errorCount = 0;
 
 void error()
 {
@@ -27,6 +28,7 @@ void error()
   }
   commandNMEA.printBuffer();
   printf("=================================================\n");
+  errorCount++;
 }
 
 void defaultHandler()
@@ -57,4 +59,5 @@ int main()
     if (v == '\n') count++;
   }
   printf("*** Processed %d NMEA sentences\n", count);
+  printf("*** Got %d error(s)\n", errorCount);
 }

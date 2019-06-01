@@ -132,6 +132,12 @@ private:
   bool mHandleCRC;
 
   /*
+   * Variables used to computed and parse the CRC
+   */
+  uint8_t mComputedCRC;
+  uint8_t mGotCRC;
+
+  /*
    * NMEAParserStringify is used internally to temporarely replace a char
    * in the buffer by a '\0' so that libc string functions may be used.
    * Instantiating a NMEAParserStringify object in a pair of {} defines
@@ -313,7 +319,9 @@ public:
     mDefaultHandler(NULL),
     mHandlerCount(0),
     mError(NMEA::NO_ERROR),
-    mHandleCRC(true)
+    mHandleCRC(true),
+    mComputedCRC(0),
+    mGotCRC(0)
   {
     reset();
   }
@@ -372,8 +380,6 @@ public:
    */
   void operator<<(char inChar)
   {
-    static uint8_t computedCRC = 0;
-    static uint8_t gotCRC = 0;
     int8_t tmp;
 
     switch (mState) {
@@ -382,9 +388,8 @@ public:
       case INIT:
         mError = NMEA::NO_ERROR;
         if (inChar == '$') {
-          computedCRC = 0;
+          mComputedCRC = 0;
           mState = SENT;
-          tmp = 0;
         }
         else unexpectedChar();
         break;
@@ -392,10 +397,9 @@ public:
       case SENT:
         if (isalnum(inChar)) {
           if (spaceAvail()) {
-            if (tmp < 5) {
-              tmp++;
+            if (mIndex < 5) {
               mBuffer[mIndex++] = inChar;
-              computedCRC ^= inChar;
+              mComputedCRC ^= inChar;
             }
             else {
               typeTooLong();
@@ -406,12 +410,12 @@ public:
         else {
           switch(inChar) {
             case ',' :
-              computedCRC ^= inChar;
+              mComputedCRC ^= inChar;
               mBuffer[--mArgIndex] = mIndex;
               mState = ARG;
               break;
             case '*' :
-              gotCRC = 0;
+              mGotCRC = 0;
               mBuffer[--mArgIndex] = mIndex;
               mState = CRCH;
               break;
@@ -426,16 +430,16 @@ public:
         if (spaceAvail()) {
           switch(inChar) {
             case ',' :
-              computedCRC ^= inChar;
+              mComputedCRC ^= inChar;
               mBuffer[--mArgIndex] = mIndex;
               break;
             case '*' :
-              gotCRC = 0;
+              mGotCRC = 0;
               mBuffer[--mArgIndex] = mIndex;
               mState = CRCH;
               break;
             default :
-              computedCRC ^= inChar;
+              mComputedCRC ^= inChar;
               mBuffer[mIndex++] = inChar;
               break;
           }
@@ -446,7 +450,7 @@ public:
       case CRCH:
         tmp = hexToNum(inChar);
         if (tmp != -1) {
-          gotCRC |= (uint8_t)tmp << 4;
+          mGotCRC |= (uint8_t)tmp << 4;
           mState = CRCL;
         }
         else unexpectedChar();
@@ -455,7 +459,7 @@ public:
       case CRCL:
         tmp = hexToNum(inChar);
         if (tmp != -1) {
-          gotCRC |= (uint8_t)tmp;
+          mGotCRC |= (uint8_t)tmp;
           mState = CRLFCR;
         }
         else unexpectedChar();
@@ -470,7 +474,7 @@ public:
 
       case CRLFLF:
         if (inChar == '\n') {
-          if (mHandleCRC && (gotCRC != computedCRC)) {
+          if (mHandleCRC && (mGotCRC != mComputedCRC)) {
             crcError();
           }
           else {
@@ -523,6 +527,7 @@ public:
     else return false;
   }
 
+#ifdef ARDUINO
   bool getArg(uint8_t num, String &arg)
   {
     if (validArgNum(num)) {
@@ -536,6 +541,7 @@ public:
     }
     else return false;
   }
+#endif
 
   bool getArg(uint8_t num, int &arg)
   {
@@ -570,20 +576,22 @@ public:
   bool getType(char *arg)
   {
     if (mIndex > 0) {
-      uint8_t endPos = endArgPos(0);
+      uint8_t endPos = startArgPos(0);
       {
         NMEAParserStringify stfy(this, endPos);
         strncpy(arg, mBuffer, 5);
+        arg[5] = '\0';
       }
       return true;
     }
     else return false;
   }
 
+#ifdef ARDUINO
   bool getType(String &arg)
   {
     if (mIndex > 0) {
-      uint8_t endPos = endArgPos(0);
+      uint8_t endPos = startArgPos(0);
       {
         NMEAParserStringify stfy(this, endPos);
         arg = mBuffer;
@@ -592,6 +600,7 @@ public:
     }
     else return false;
   }
+#endif
 
   NMEA::ErrorCode error() {
     return mError;
@@ -604,7 +613,10 @@ public:
 #ifdef __amd64__
   void printBuffer()
   {
-    printf("%s\n", mBuffer);
+    {
+      NMEAParserStringify stfy(this, startArgPos(0));
+      printf("%s\n", mBuffer);
+    }
     for (uint8_t i = 0; i < argCount(); i++) {
       uint8_t startPos = startArgPos(i);
       uint8_t endPos = endArgPos(i);
