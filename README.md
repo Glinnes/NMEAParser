@@ -123,7 +123,7 @@ void handleDepthBelowSurface(void)
 
 ### ```bool getType(<type>) / bool getType(<num>, <charType>)```
 
-3 versions of ```getType``` exist. The first one puts the type of the sentence in ```<type>``` which is a ```char *```. The second one does the same but ```<type>``` is a ```String```. Return ```true``` if a type has been parsed, ```false``` otherwise. The thrid one puts a character of the type at position ```<num>```
+3 versions of ```getType``` exist. The first one puts the type of the sentence in ```<type>``` which is a ```char *```. The second one does the same but ```<type>``` is a ```String```. Return ```true``` if a type has been parsed, ```false``` otherwise. The third one puts a character of the type at position ```<num>```
 
 ### ```uint8_t argCount()```
 
