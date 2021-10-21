@@ -64,12 +64,6 @@ namespace NMEA {
  */
 template <size_t S> class NMEAParser {
 
-private:
-  typedef void (*NMEAErrorHandler)(void);
-  typedef void (*NMEAHandler)(void);
-  typedef struct { char mToken[kTokenMaxSize+1]; NMEAHandler mHandler; } NMEAHandlerEntry;
-  typedef enum { INIT, SENT, ARG, CRCH, CRCL, CRLFCR, CRLFLF } State;
-
 public:
 
   /*
@@ -77,7 +71,7 @@ public:
    * Needed for Non-compliant NMEA Strings, such as the PSTM Sentences from ST
    * Microelectronics 
    */
-  static const uint8_t kTokenMaxSize = 10;
+  static const uint8_t kTokenMaxSize = 5;
 
   /*
    * maximum sentence size is 82 including the starting '$' and the <cr><lf>
@@ -86,6 +80,12 @@ public:
    * is enough.
    */
   static const uint8_t kSentenceMaxSize = 77;
+
+private:
+  typedef void (*NMEAErrorHandler)(void);
+  typedef void (*NMEAHandler)(void);
+  typedef struct { char mToken[kTokenMaxSize+1]; NMEAHandler mHandler; } NMEAHandlerEntry;
+  typedef enum { INIT, SENT, ARG, CRCH, CRCL, CRLFCR, CRLFLF } State;
 
 private:
   /*
@@ -355,7 +355,7 @@ public:
    */
   void addHandler(const char *inToken, NMEAHandler inHandler)
   {
-    if (mHandlerCount < S) {x
+    if (mHandlerCount < S) {
       if (getHandler(inToken) == -1) {
         strncpy(mHandlers[mHandlerCount].mToken, inToken, kTokenMaxSize);
         mHandlers[mHandlerCount].mToken[kTokenMaxSize] = '\0';
