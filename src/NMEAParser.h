@@ -45,6 +45,20 @@
 #include <Arduino.h>
 #endif
 
+
+/*
+* Adjust this Define to Increase the Maximum Token Size that Can be recognized.
+* Needed for Non-compliant NMEA Strings, such as the PSTM Sentences from ST
+* Microelectronics 
+*/
+#define MAX_TOK_SIZE  				10
+
+/*
+* Higher Precision GPS Modules sometimes require larger buffers.
+* Increase this to increase the maximum size of sentence that can be received.
+*/
+#define MAX_SENT_SIZE  				77
+
 namespace NMEA {
   /*
    * Error codes
@@ -67,7 +81,7 @@ template <size_t S> class NMEAParser {
 private:
   typedef void (*NMEAErrorHandler)(void);
   typedef void (*NMEAHandler)(void);
-  typedef struct { char mToken[6]; NMEAHandler mHandler; } NMEAHandlerEntry;
+  typedef struct { char mToken[MAX_TOK_SIZE+1]; NMEAHandler mHandler; } NMEAHandlerEntry;
   typedef enum { INIT, SENT, ARG, CRCH, CRCL, CRLFCR, CRLFLF } State;
 
 public:
@@ -77,7 +91,7 @@ public:
    * are not bufferized, 82 - 6 + 1 = 77 chars  are enough.
    * is enough.
    */
-  static const uint8_t kSentenceMaxSize = 77;
+  static const uint8_t kSentenceMaxSize = MAX_SENT_SIZE;
 
 private:
   /*
@@ -205,7 +219,7 @@ private:
   }
 
   /*
-   * Called when the type of the sentence is longer than 5 characters
+   * Called when the type of the sentence is longer than MAX_TOK_SIZE characters
    */
   void typeTooLong()
   {
@@ -256,6 +270,10 @@ private:
   {
     while (len-- > 0) {
       if (*s1 != *s2 && *s1 != '-' && *s2 != '-') return false;
+	  //If one string is shorter (for instance, a standard length token
+	  //when non-standard tokens are allowed), we need to break out
+	  //when the end of string is reached.
+      if(*s1 == 0x00 || *s2 == 0x00) return true;
       s1++;
       s2++;
     }
@@ -269,7 +287,7 @@ private:
   {
     /* Look for the token */
     for (uint8_t i = 0; i < mHandlerCount; i++) {
-      if (strnwcmp(mHandlers[i].mToken, inToken, 5)) {
+      if (strnwcmp(mHandlers[i].mToken, inToken, MAX_TOK_SIZE)) {
         return i;
       }
     }
@@ -343,10 +361,10 @@ public:
    */
   void addHandler(const char *inToken, NMEAHandler inHandler)
   {
-    if (mHandlerCount < S) {
+    if (mHandlerCount < S) {x
       if (getHandler(inToken) == -1) {
-        strncpy(mHandlers[mHandlerCount].mToken, inToken, 5);
-        mHandlers[mHandlerCount].mToken[5] = '\0';
+        strncpy(mHandlers[mHandlerCount].mToken, inToken, MAX_TOK_SIZE);
+        mHandlers[mHandlerCount].mToken[MAX_TOK_SIZE] = '\0';
         mHandlers[mHandlerCount].mHandler = inHandler;
         mHandlerCount++;
       }
@@ -359,9 +377,9 @@ public:
    */
    void addHandler(const __FlashStringHelper *ifsh, NMEAHandler inHandler)
    {
-     char buf[6];
+     char buf[MAX_TOK_SIZE+1];
      PGM_P p = reinterpret_cast<PGM_P>(ifsh);
-     for (uint8_t i = 0; i < 6; i++) {
+     for (uint8_t i = 0; i < (MAX_TOK_SIZE+1); i++) {
        char c = pgm_read_byte(p++);
        buf[i] = c;
        if (c == '\0') break;
@@ -409,7 +427,7 @@ public:
       case SENT:
         if (isalnum(inChar)) {
           if (spaceAvail()) {
-            if (mIndex < 5) {
+            if (mIndex < MAX_TOK_SIZE) {
               mBuffer[mIndex++] = inChar;
               mComputedCRC ^= inChar;
             }
@@ -591,8 +609,8 @@ public:
       uint8_t endPos = startArgPos(0);
       {
         NMEAParserStringify stfy(this, endPos);
-        strncpy(arg, mBuffer, 5);
-        arg[5] = '\0';
+        strncpy(arg, mBuffer, MAX_TOK_SIZE);
+        arg[MAX_TOK_SIZE] = '\0';
       }
       return true;
     }
