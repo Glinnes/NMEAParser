@@ -77,7 +77,7 @@ public:
    * Needed for Non-compliant NMEA Strings, such as the PSTM Sentences from ST
    * Microelectronics 
    */
-  static const uint8_t kTokenMaxSize = 10;
+  static const uint8_t kTokenMaxSize = 5;
 
   /*
    * maximum sentence size is 82 including the starting '$' and the <cr><lf>
